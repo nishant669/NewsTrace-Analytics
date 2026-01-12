@@ -1,0 +1,13 @@
+# Security: Ignore secrets
+.env
+
+# System: Ignore Python compiled files
+__pycache__/
+*.pyc
+
+# Environment: Ignore the huge venv folder
+.venv/
+env/
+
+# Data: Ignore local CSVs (optional, but good practice)
+*.csv

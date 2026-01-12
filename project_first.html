@@ -1,0 +1,1257 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NewsTrace — Outlet Dashboard</title>
+  <script src="https://cdn.plot.ly/plotly-2.24.1.min.js"></script>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>
+    /* CSS Variables and Global Reset */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg-primary: #0a0e27;
+      --bg-secondary: #141b3d;
+      --bg-card: #1a2347;
+      --text-primary: #e8eaed;
+      --text-secondary: #9aa0a6;
+      --accent-blue: #4285f4;
+      --accent-purple: #8b5cf6;
+      --accent-green: #34a853;
+      --accent-red: #ea4335;
+      --accent-orange: #fbbc04;
+      --border-color: rgba(255, 255, 255, 0.1);
+      --shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+      color: var(--text-primary);
+      min-height: 100vh;
+      overflow-x: hidden;
+      scroll-behavior: smooth;
+    }
+
+    /* Layout and Structure */
+    .container {
+      max-width: 1800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .header {
+      background: linear-gradient(135deg, var(--bg-card) 0%, #1e2952 100%);
+      padding: 40px;
+      border-radius: 20px;
+      margin-bottom: 30px;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border-color);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .header::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -10%;
+      width: 300px;
+      height: 300px;
+      background: radial-gradient(circle, var(--accent-blue) 0%, transparent 70%);
+      opacity: 0.1;
+      animation: pulse 4s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        transform: scale(1);
+        opacity: 0.1;
+      }
+
+      50% {
+        transform: scale(1.1);
+        opacity: 0.15;
+      }
+    }
+
+    .header h1 {
+      font-size: 2.8rem;
+      background: linear-gradient(135deg, var(--accent-blue) 0%, var(--accent-purple) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 12px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .header p {
+      color: var(--text-secondary);
+      font-size: 1.15rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Layout and Structure */
+    .layout {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      gap: 25px;
+    }
+
+    /* Sidebar and Controls */
+    .sidebar {
+      background: var(--bg-card);
+      padding: 25px;
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border-color);
+      height: fit-content;
+      position: sticky;
+      top: 20px;
+    }
+
+    .sidebar h2 {
+      font-size: 1.3rem;
+      margin-bottom: 20px;
+      color: var(--accent-blue);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .filter-section {
+      margin-bottom: 25px;
+    }
+
+    .filter-section label {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+
+    select,
+    input[type="text"],
+    input[type="number"] {
+      width: 100%;
+      padding: 12px 15px;
+      background: var(--bg-secondary);
+      border: 2px solid var(--border-color);
+      border-radius: 10px;
+      color: var(--text-primary);
+      font-size: 0.95rem;
+      transition: all 0.3s ease;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath fill='%239aa0a6' d='M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 6.757 7.586 5.343 9l4.647 4.646z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 15px center;
+      background-size: 12px;
+    }
+
+    select:focus,
+    input:focus {
+      outline: none;
+      border-color: var(--accent-blue);
+      box-shadow: 0 0 0 3px rgba(66, 133, 244, 0.1);
+    }
+
+    /* Buttons */
+    .btn {
+      width: 100%;
+      padding: 14px 20px;
+      background: linear-gradient(135deg, var(--accent-blue) 0%, var(--accent-purple) 100%);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(66, 133, 244, 0.3);
+      margin-top: 10px;
+      text-transform: uppercase;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 25px rgba(66, 133, 244, 0.4);
+    }
+
+    .btn-secondary {
+      background: linear-gradient(135deg, var(--accent-green) 0%, var(--accent-blue) 100%);
+      box-shadow: 0 4px 15px rgba(52, 168, 83, 0.3);
+    }
+
+    .btn-secondary:hover {
+      box-shadow: 0 6px 25px rgba(52, 168, 83, 0.4);
+    }
+
+    .main-content {
+      display: flex;
+      flex-direction: column;
+      gap: 25px;
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 20px;
+    }
+
+    .stat-card {
+      background: var(--bg-card);
+      padding: 25px;
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border-color);
+      border-left: 4px solid;
+      transition: all 0.3s ease;
+      cursor: default;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+    }
+
+    .stat-card.blue {
+      border-left-color: var(--accent-blue);
+    }
+
+    .stat-card.purple {
+      border-left-color: var(--accent-purple);
+    }
+
+    .stat-card.green {
+      border-left-color: var(--accent-green);
+    }
+
+    .stat-card.orange {
+      border-left-color: var(--accent-orange);
+    }
+
+    .stat-icon {
+      font-size: 2.5rem;
+      margin-bottom: 12px;
+      opacity: 0.8;
+    }
+
+    .stat-label {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .stat-value {
+      font-size: 2.2rem;
+      font-weight: bold;
+      color: var(--text-primary);
+    }
+
+    /* Data and Charts Sections */
+    .data-section {
+      background: var(--bg-card);
+      padding: 30px;
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border-color);
+    }
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 25px;
+      padding-bottom: 15px;
+      border-bottom: 2px solid var(--border-color);
+    }
+
+    .section-header h3 {
+      font-size: 1.5rem;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .charts-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 25px;
+    }
+
+    .chart-card {
+      background: var(--bg-card);
+      padding: 25px;
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border-color);
+    }
+
+    .chart-title {
+      font-size: 1.3rem;
+      margin-bottom: 20px;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* Table Styles */
+    .table-container {
+      overflow-x: auto;
+      max-height: 500px;
+      overflow-y: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    thead {
+      position: sticky;
+      top: 0;
+      background: var(--bg-secondary);
+      z-index: 10;
+    }
+
+    th {
+      padding: 15px;
+      text-align: left;
+      color: var(--text-secondary);
+      font-weight: 600;
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-bottom: 2px solid var(--border-color);
+    }
+
+    td {
+      padding: 15px;
+      border-bottom: 1px solid var(--border-color);
+      color: var(--text-primary);
+    }
+
+    tbody tr {
+      transition: all 0.2s ease;
+    }
+
+    tbody tr:hover {
+      background: rgba(66, 133, 244, 0.05);
+    }
+
+    .author-cell {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .author-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 1.1rem;
+      flex-shrink: 0;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      background: rgba(66, 133, 244, 0.15);
+      color: var(--accent-blue);
+      margin-right: 5px;
+      margin-top: 5px;
+      white-space: nowrap;
+    }
+
+    .profile-link {
+      color: var(--accent-blue);
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+
+    .profile-link:hover {
+      color: var(--accent-purple);
+      text-decoration: underline;
+    }
+
+    /* Network Graph Specific Styles */
+    #network-graph {
+      height: 800px;
+      width: 100%;
+      background: var(--bg-secondary);
+      border-radius: 12px;
+      border: 1px solid var(--border-color);
+      position: relative;
+    }
+
+    .node {
+      cursor: grab;
+      transition: all 0.3s ease;
+    }
+
+    .node:active {
+      cursor: grabbing;
+    }
+
+    .node circle {
+      stroke: #fff;
+      stroke-width: 2px;
+      transition: fill 0.3s;
+    }
+
+    .node.author circle {
+      fill: var(--accent-red);
+    }
+
+    .node.topic circle {
+      fill: var(--accent-green);
+    }
+
+    .node text {
+      font-size: 11px;
+      fill: var(--text-primary);
+      pointer-events: none;
+    }
+
+    .link {
+      stroke: rgba(136, 153, 166, 0.3);
+      stroke-width: 1px;
+      transition: stroke 0.3s;
+    }
+
+    .link:hover {
+      stroke: var(--accent-blue);
+      stroke-width: 2px;
+    }
+
+    /* Utility and Feedback */
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(10, 14, 39, 0.95);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+    }
+
+    .loading-overlay.active {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .loader {
+      width: 50px;
+      height: 50px;
+      border: 5px solid rgba(66, 133, 244, 0.3);
+      border-top-color: var(--accent-blue);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: var(--bg-card);
+      padding: 15px 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+      border-left: 4px solid var(--accent-green);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      transform: translateX(400px);
+      transition: transform 0.3s ease;
+      z-index: 10000;
+      color: var(--text-primary);
+    }
+
+    .toast.show {
+      transform: translateX(0);
+    }
+
+    .toast.error {
+      border-left-color: var(--accent-red);
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-secondary);
+    }
+
+    .empty-state-icon {
+      font-size: 4rem;
+      margin-bottom: 20px;
+      opacity: 0.5;
+    }
+
+    /* Media Queries for Responsiveness */
+    @media (max-width: 1200px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        position: relative;
+        top: 0;
+      }
+
+      .charts-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        padding: 10px;
+      }
+
+      .header {
+        padding: 30px 20px;
+      }
+
+      .header h1 {
+        font-size: 2rem;
+      }
+
+      .charts-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .stats-grid {
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      }
+
+      .data-section {
+        padding: 20px;
+      }
+
+      .stat-value {
+        font-size: 1.8rem;
+      }
+
+      .sidebar .btn {
+        margin-top: 5px;
+      }
+
+      .sidebar h2 {
+        font-size: 1.1rem;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="loader"></div>
+  </div>
+
+  <div class="container">
+    <div class="header">
+      <h1>📰 NewsTrace — Outlet Dashboard</h1>
+      <p>Autonomous Journalist Profiling & Media Trend Analysis System. (Ctrl/Cmd + K to search)</p>
+    </div>
+
+    <div class="layout">
+      <aside class="sidebar">
+        <h2>🎛️ Filters</h2>
+
+        <div class="filter-section">
+          <label for="topicFilter">Filter by Topic</label>
+          <select id="topicFilter">
+            <option value="">All Topics</option>
+          </select>
+        </div>
+
+        <div class="filter-section">
+          <label for="outletFilter">Filter by Outlet</label>
+          <select id="outletFilter">
+            <option value="">All Outlets</option>
+          </select>
+        </div>
+
+        <div class="filter-section">
+          <label for="authorSearch">Search Author</label>
+          <input type="text" id="authorSearch" placeholder="Type name...">
+        </div>
+
+        <div class="filter-section">
+          <label for="minArticles">Min Articles</label>
+          <input type="number" id="minArticles" min="0" value="0">
+        </div>
+
+        <button class="btn" onclick="applyFilters()">🔍 Apply Filters</button>
+        <button class="btn btn-secondary" onclick="showTopAuthors()">🏆 Top 20 Authors</button>
+        <button class="btn" style="background: var(--accent-purple);" onclick="exportData()">📥 Export CSV
+          (Ctrl+E)</button>
+        <button class="btn btn-secondary" style="background: var(--accent-red);" onclick="resetFilters()">🔄 Reset
+          Filters (Ctrl+R)</button>
+      </aside>
+
+      <main class="main-content">
+        <div class="stats-grid">
+          <div class="stat-card blue">
+            <div class="stat-icon">👥</div>
+            <div class="stat-label">Total Authors</div>
+            <div class="stat-value" id="totalAuthors">0</div>
+          </div>
+          <div class="stat-card purple">
+            <div class="stat-icon">📄</div>
+            <div class="stat-label">Total Articles</div>
+            <div class="stat-value" id="totalArticles">0</div>
+          </div>
+          <div class="stat-card green">
+            <div class="stat-icon">🏷️</div>
+            <div class="stat-label">Active Topics</div>
+            <div class="stat-value" id="totalTopics">0</div>
+          </div>
+          <div class="stat-card orange">
+            <div class="stat-icon">🌐</div>
+            <div class="stat-label">Outlets</div>
+            <div class="stat-value" id="totalOutlets">0</div>
+          </div>
+        </div>
+
+        <div class="charts-grid">
+          <div class="chart-card">
+            <h3 class="chart-title">📊 Top 10 Article Contributors</h3>
+            <div id="topContributorsChart" style="height: 400px;"></div>
+          </div>
+          <div class="chart-card">
+            <h3 class="chart-title">🎯 Topic Contribution Distribution</h3>
+            <div id="topicDistChart" style="height: 400px;"></div>
+          </div>
+          <div class="chart-card">
+            <h3 class="chart-title">📈 Articles by Outlet</h3>
+            <div id="outletChart" style="height: 400px;"></div>
+          </div>
+          <div class="chart-card">
+            <h3 class="chart-title">🏅 Author Productivity Distribution</h3>
+            <div id="productivityChart" style="height: 400px;"></div>
+          </div>
+        </div>
+
+        <div class="data-section">
+          <div class="section-header">
+            <h3>🕸️ Journalist-Topic Network (Top 20 Authors)</h3>
+            <button class="btn"
+              style="width: auto; padding: 10px 20px; margin: 0; background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%);"
+              onclick="refreshNetwork()">🔄 Refresh Layout</button>
+          </div>
+          <svg id="network-graph"></svg>
+        </div>
+
+        <div class="data-section">
+          <div class="section-header">
+            <h3>📋 Authors Database</h3>
+            <span style="color: var(--text-secondary);" id="authorCount">Loading...</span>
+          </div>
+          <div class="table-container">
+            <table id="authorsTable">
+              <thead>
+                <tr>
+                  <th>Author</th>
+                  <th>Articles</th>
+                  <th>Beat Tags</th>
+                  <th>Profile</th>
+                </tr>
+              </thead>
+              <tbody id="authorsTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // --- MOCK DATA GENERATION ---
+    const mockData = { authors: [], articles: [], edges: [], topics: [], outlets: [] };
+
+    function generateMockData() {
+      const topics = [
+        'AI & Machine Learning', 'Climate Change', 'Cryptocurrency', 'Space Exploration', 'Healthcare Tech',
+        'Cybersecurity', 'Renewable Energy', 'Quantum Computing', 'Politics', 'Economics',
+        'Social Media', 'Education', 'Biotechnology', 'Geopolitics', 'Fintech',
+        'Autonomous Vehicles', 'Global Trade', 'Supply Chain', 'Public Health', 'Human Rights',
+        'Art & Culture', 'Sports Analytics', 'Food Security', 'Disaster Relief', 'Urban Planning'
+      ];
+      const outlets = [
+        'The New York Times', 'The Washington Post', 'BBC News', 'Reuters', 'Bloomberg',
+        'The Guardian', 'TechCrunch', 'Wired', 'The Verge', 'MIT Technology Review',
+        'Financial Times', 'Al Jazeera', 'CNN', 'Fox News', 'The Economist',
+        'Science Daily', 'Nature', 'The Wall Street Journal', 'Forbes', 'Vice News'
+      ];
+      const firstNames = [
+        'Sarah', 'Michael', 'Emma', 'James', 'Olivia', 'William', 'Ava', 'Robert', 'Sophia', 'David',
+        'Chloe', 'Noah', 'Mia', 'Liam', 'Isabella', 'Jacob', 'Emily', 'Ethan', 'Charlotte', 'Mason',
+        'Amelia', 'Alexander', 'Harper', 'Elijah', 'Abigail', 'Benjamin', 'Elizabeth', 'Daniel', 'Evelyn'
+      ];
+      const lastNames = [
+        'Chen', 'Rodriguez', 'Thompson', 'Wilson', 'Patel', 'Kim', 'Martinez', 'Zhang', 'Anderson', 'O\'Brien',
+        'Garcia', 'Miller', 'Davis', 'Lee', 'Wong', 'Scott', 'Jackson', 'Taylor', 'Hall', 'Lewis',
+        'Clark', 'Walker', 'Young', 'King', 'Wright', 'Lopez', 'Hill', 'Green', 'Adams', 'Baker'
+      ];
+
+      mockData.topics = topics;
+      mockData.outlets = outlets;
+
+      for (let i = 0; i < 300; i++) {
+        const name = `${firstNames[Math.floor(Math.random() * firstNames.length)]} ${lastNames[Math.floor(Math.random() * lastNames.length)]}`;
+        const numArticles = Math.floor(Math.random() * 450) + 50;
+        const authorTopics = [];
+        for (let j = 0; j < Math.floor(Math.random() * 5) + 1; j++) {
+          const topic = topics[Math.floor(Math.random() * topics.length)];
+          if (!authorTopics.includes(topic)) authorTopics.push(topic);
+        }
+        const outlet = outlets[Math.floor(Math.random() * outlets.length)];
+
+        mockData.authors.push({
+          name, num_articles: numArticles, beat_tags: authorTopics.join(', '),
+          profile_url: `https://example.com/author/${name.replace(/\s/g, '-')}`, outlet
+        });
+
+        authorTopics.forEach(topic => {
+          mockData.edges.push({ author: name, topic, weight: Math.floor(Math.random() * 20) + 5 });
+        });
+      }
+    }
+
+    generateMockData();
+    let filteredData = JSON.parse(JSON.stringify(mockData));
+
+    // --- UI UPDATE FUNCTIONS ---
+
+    function updateStats() {
+      document.getElementById('totalAuthors').textContent = filteredData.authors.length;
+      document.getElementById('totalArticles').textContent = filteredData.authors.reduce((sum, a) => sum + a.num_articles, 0).toLocaleString();
+      document.getElementById('totalTopics').textContent = new Set(filteredData.edges.map(e => e.topic)).size;
+      document.getElementById('totalOutlets').textContent = new Set(filteredData.authors.map(a => a.outlet)).size;
+    }
+
+    function populateFilters() {
+      const topicSelect = document.getElementById('topicFilter');
+      const outletSelect = document.getElementById('outletFilter');
+
+      [...mockData.topics].sort().forEach(topic => {
+        const opt = document.createElement('option');
+        opt.value = topic;
+        opt.textContent = topic;
+        topicSelect.appendChild(opt);
+      });
+      [...mockData.outlets].sort().forEach(outlet => {
+        const opt = document.createElement('option');
+        opt.value = outlet;
+        opt.textContent = outlet;
+        outletSelect.appendChild(opt);
+      });
+    }
+
+    function applyFilters() {
+      showLoading();
+      setTimeout(() => {
+        const topic = document.getElementById('topicFilter').value;
+        const outlet = document.getElementById('outletFilter').value;
+        const authorSearch = document.getElementById('authorSearch').value.toLowerCase();
+        const minArticles = parseInt(document.getElementById('minArticles').value) || 0;
+
+        const filteredAuthors = mockData.authors.filter(author => {
+          return (!topic || author.beat_tags.includes(topic)) &&
+            (!outlet || author.outlet === outlet) &&
+            (!authorSearch || author.name.toLowerCase().includes(authorSearch)) &&
+            (author.num_articles >= minArticles);
+        });
+        filteredData.authors = filteredAuthors;
+
+        const validAuthorNames = new Set(filteredAuthors.map(a => a.name));
+        filteredData.edges = mockData.edges.filter(edge => {
+          return validAuthorNames.has(edge.author) && (!topic || edge.topic === topic);
+        });
+
+        updateAll();
+        hideLoading();
+        showToast('Filters applied! ' + filteredAuthors.length + ' authors found.');
+      }, 300);
+    }
+
+    function resetFilters() {
+      document.getElementById('topicFilter').value = '';
+      document.getElementById('outletFilter').value = '';
+      document.getElementById('authorSearch').value = '';
+      document.getElementById('minArticles').value = '0';
+      filteredData = JSON.parse(JSON.stringify(mockData));
+      updateAll();
+      showToast('Filters reset!');
+    }
+
+    function updateAuthorsTable(showTop20 = false) {
+      const tbody = document.getElementById('authorsTableBody');
+      let authors = [...filteredData.authors].sort((a, b) => b.num_articles - a.num_articles);
+
+      if (showTop20) {
+        authors = authors.slice(0, 20);
+      }
+
+      document.getElementById('authorCount').textContent = `Showing ${authors.length} author${authors.length !== 1 ? 's' : ''}`;
+
+      if (authors.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4"><div class="empty-state"><div class="empty-state-icon">🔍</div><p>No authors found matching your criteria.</p></div></td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = authors.map(author => `
+      <tr>
+        <td>
+          <div class="author-cell">
+            <div class="author-avatar">${author.name.charAt(0)}</div>
+            <div>
+              <div style="font-weight: 600;">${author.name}</div>
+              <div style="font-size: 0.85rem; color: var(--text-secondary);">${author.outlet}</div>
+            </div>
+          </div>
+        </td>
+        <td><strong>${author.num_articles.toLocaleString()}</strong></td>
+        <td>${author.beat_tags.split(', ').map(tag => `<span class="badge">${tag}</span>`).join('')}</td>
+        <td><a href="${author.profile_url}" class="profile-link" target="_blank" rel="noopener noreferrer">View Profile →</a></td>
+      </tr>
+    `).join('');
+    }
+
+    function showTopAuthors() {
+      updateAuthorsTable(true);
+      showToast('Showing top 20 authors by articles published.');
+    }
+
+    // --- CHARTING FUNCTIONS (Plotly) ---
+
+    function updateTopContributorsChart() {
+      const top10 = [...filteredData.authors].sort((a, b) => b.num_articles - a.num_articles).slice(0, 10).reverse();
+
+      const trace = {
+        x: top10.map(a => a.num_articles),
+        y: top10.map(a => a.name),
+        type: 'bar',
+        orientation: 'h',
+        hoverinfo: 'x+y',
+        marker: {
+          color: top10.map((_, i) => `hsl(${210 + i * 15}, 70%, 55%)`),
+          line: { width: 1, color: 'rgba(255,255,255,0.2)' }
+        }
+      };
+
+      const layout = {
+        title: false,
+        plot_bgcolor: 'transparent',
+        paper_bgcolor: 'transparent',
+        font: { color: '#e8eaed', family: 'Inter' },
+        margin: { l: 150, r: 20, t: 20, b: 40 },
+        xaxis: {
+          title: 'Articles Published',
+          gridcolor: 'rgba(255,255,255,0.1)',
+          zerolinecolor: 'rgba(255,255,255,0.1)',
+          tickformat: ',.0f'
+        },
+        yaxis: {
+          autorange: true,
+          tickangle: 0,
+          gridcolor: 'rgba(255,255,255,0.05)'
+        }
+      };
+      Plotly.newPlot('topContributorsChart', [trace], layout, { responsive: true, displayModeBar: false });
+    }
+
+    function updateTopicDistChart() {
+      const topicCounts = {};
+      filteredData.edges.forEach(edge => {
+        topicCounts[edge.topic] = (topicCounts[edge.topic] || 0) + edge.weight;
+      });
+
+      const topics = Object.keys(topicCounts);
+      const values = Object.values(topicCounts);
+
+      const sortedIndices = values.map((v, i) => i).sort((a, b) => values[b] - values[a]);
+      const sortedTopics = sortedIndices.map(i => topics[i]);
+      const sortedValues = sortedIndices.map(i => values[i]);
+
+      const trace = {
+        labels: sortedTopics.slice(0, 10),
+        values: sortedValues.slice(0, 10),
+        type: 'pie',
+        hole: 0.4,
+        marker: { colors: sortedTopics.map((_, i) => `hsl(${i * 30 + 10}, 70%, 55%)`) },
+        textinfo: 'percent',
+        hovertemplate: '<b>%{label}</b><br>Count: %{value}<extra></extra>'
+      };
+
+      const layout = {
+        title: false,
+        plot_bgcolor: 'transparent',
+        paper_bgcolor: 'transparent',
+        font: { color: '#e8eaed', family: 'Inter' },
+        margin: { l: 20, r: 20, t: 20, b: 20 },
+        showlegend: true,
+        legend: { orientation: 'h', y: -0.1 }
+      };
+      Plotly.newPlot('topicDistChart', [trace], layout, { responsive: true, displayModeBar: false });
+    }
+
+    function updateOutletChart() {
+      const outletCounts = {};
+      filteredData.authors.forEach(author => {
+        outletCounts[author.outlet] = (outletCounts[author.outlet] || 0) + author.num_articles;
+      });
+
+      const outlets = Object.keys(outletCounts).sort((a, b) => outletCounts[b] - outletCounts[a]).slice(0, 10);
+      const values = outlets.map(o => outletCounts[o]);
+
+      const trace = {
+        x: outlets,
+        y: values,
+        type: 'bar',
+        marker: {
+          color: outlets.map((_, i) => `hsl(${160 + i * 20}, 65%, 50%)`),
+          line: { width: 1, color: 'rgba(255,255,255,0.2)' }
+        },
+        hovertemplate: '<b>%{x}</b><br>Articles: %{y}<extra></extra>'
+      };
+
+      const layout = {
+        title: false,
+        plot_bgcolor: 'transparent',
+        paper_bgcolor: 'transparent',
+        font: { color: '#e8eaed', family: 'Inter' },
+        margin: { l: 50, r: 20, t: 20, b: 100 },
+        xaxis: {
+          tickangle: -45,
+          gridcolor: 'rgba(255,255,255,0.05)'
+        },
+        yaxis: {
+          title: 'Total Articles',
+          gridcolor: 'rgba(255,255,255,0.1)',
+          tickformat: ',.0f'
+        }
+      };
+      Plotly.newPlot('outletChart', [trace], layout, { responsive: true, displayModeBar: false });
+    }
+
+    function updateProductivityChart() {
+      const authorsByArticles = [...filteredData.authors].sort((a, b) => b.num_articles - a.num_articles);
+
+      const ranges = {
+        '50-100': 0,
+        '100-200': 0,
+        '200-300': 0,
+        '300-400': 0,
+        '400+': 0
+      };
+
+      authorsByArticles.forEach(author => {
+        const count = author.num_articles;
+        if (count < 100) ranges['50-100']++;
+        else if (count < 200) ranges['100-200']++;
+        else if (count < 300) ranges['200-300']++;
+        else if (count < 400) ranges['300-400']++;
+        else ranges['400+']++;
+      });
+
+      const trace = {
+        labels: Object.keys(ranges),
+        values: Object.values(ranges),
+        type: 'pie',
+        hole: 0.4,
+        marker: {
+          colors: ['#4285f4', '#8b5cf6', '#34a853', '#fbbc04', '#ea4335']
+        },
+        textinfo: 'label+percent',
+        hovertemplate: '<b>%{label} Articles</b><br>Authors: %{value}<extra></extra>'
+      };
+
+      const layout = {
+        title: false,
+        plot_bgcolor: 'transparent',
+        paper_bgcolor: 'transparent',
+        font: { color: '#e8eaed', family: 'Inter' },
+        margin: { l: 20, r: 20, t: 20, b: 20 },
+        showlegend: false
+      };
+      Plotly.newPlot('productivityChart', [trace], layout, { responsive: true, displayModeBar: false });
+    }
+
+    // --- NETWORK GRAPH (D3.js) ---
+
+    function updateNetworkGraph() {
+      const svg = d3.select("#network-graph");
+      svg.selectAll("g").remove();
+
+      const container = document.getElementById('network-graph');
+      const width = container.clientWidth;
+      const height = 800;
+
+      svg.attr("width", width).attr("height", height);
+
+      const topAuthors = [...filteredData.authors].sort((a, b) => b.num_articles - a.num_articles).slice(0, 20);
+      const authorNames = new Set(topAuthors.map(a => a.name));
+
+      const relevantEdges = filteredData.edges.filter(edge => authorNames.has(edge.author));
+
+      const nodes = [];
+      const links = [];
+
+      topAuthors.forEach(author => {
+        nodes.push({ id: author.name, type: 'author', value: author.num_articles });
+      });
+
+      const topicNodeMap = new Map();
+      relevantEdges.forEach(edge => {
+        if (!topicNodeMap.has(edge.topic)) {
+          topicNodeMap.set(edge.topic, { id: edge.topic, type: 'topic', value: 0 });
+        }
+        topicNodeMap.get(edge.topic).value += edge.weight;
+
+        links.push({ source: edge.author, target: edge.topic, value: edge.weight });
+      });
+
+      nodes.push(...Array.from(topicNodeMap.values()));
+
+      if (nodes.length === 0) {
+        svg.append("g").attr("transform", `translate(${width / 2}, ${height / 2})`).append("text")
+          .attr("text-anchor", "middle").attr("fill", "var(--text-secondary)").attr("font-size", "1.2rem")
+          .text("No data to display for the network graph.");
+        return;
+      }
+
+      const simulation = d3.forceSimulation(nodes)
+        .force("link", d3.forceLink(links).id(d => d.id).distance(d => 150 + d.value * 3).strength(0.9))
+        .force("charge", d3.forceManyBody().strength(-2500))
+        .force("center", d3.forceCenter(width / 2, height / 2))
+        .force("collision", d3.forceCollide().radius(d => Math.sqrt(d.value) * 2.5 + 15));
+
+      for (let i = 0; i < 300; i++) {
+        simulation.tick();
+      }
+
+      const g = svg.append("g");
+
+      const link = g.append("g")
+        .selectAll("line")
+        .data(links)
+        .enter().append("line")
+        .attr("class", "link")
+        .attr("stroke-width", d => Math.sqrt(d.value) / 3);
+
+      const node = g.append("g")
+        .selectAll("g")
+        .data(nodes)
+        .enter().append("g")
+        .attr("class", d => `node ${d.type}`)
+        .call(d3.drag()
+          .on("start", dragstarted)
+          .on("drag", dragged)
+          .on("end", dragended));
+
+      node.append("circle")
+        .attr("r", d => Math.sqrt(d.value) * 2.5)
+        .attr("title", d => d.id);
+
+      node.append("text")
+        .attr("dy", d => Math.sqrt(d.value) * 2.5 + 5)
+        .attr("text-anchor", "middle")
+        .text(d => d.id.length > 15 ? d.id.substring(0, 12) + '...' : d.id);
+
+      simulation.on("tick", () => {
+        nodes.forEach(d => {
+          d.x = Math.max(10, Math.min(width - 10, d.x));
+          d.y = Math.max(10, Math.min(height - 10, d.y));
+        });
+
+        link
+          .attr("x1", d => d.source.x)
+          .attr("y1", d => d.source.y)
+          .attr("x2", d => d.target.x)
+          .attr("y2", d => d.target.y);
+
+        node.attr("transform", d => `translate(${d.x},${d.y})`);
+      });
+
+      function dragstarted(event, d) {
+        if (!event.active) simulation.alphaTarget(0.3).restart();
+        d.fx = d.x;
+        d.fy = d.y;
+      }
+
+      function dragged(event, d) {
+        d.fx = event.x;
+        d.fy = event.y;
+      }
+
+      function dragended(event, d) {
+        if (!event.active) simulation.alphaTarget(0);
+        d.fx = null;
+        d.fy = null;
+      }
+    }
+
+    function refreshNetwork() {
+      showLoading();
+      setTimeout(() => {
+        updateNetworkGraph();
+        hideLoading();
+        showToast('Network layout refreshed!');
+      }, 300);
+    }
+
+    // --- DATA UTILITIES ---
+
+    function exportData() {
+      const csvContent = [
+        ['Author', 'Articles', 'Beat Tags', 'Outlet', 'Profile URL'],
+        ...filteredData.authors.map(a => [a.name, a.num_articles, a.beat_tags, a.outlet, a.profile_url])
+      ].map(row => row.map(cell => {
+        let content = typeof cell === 'string' ? cell.replace(/"/g, '""') : cell;
+        return `"${content}"`;
+      }).join(',')
+      ).join('\n');
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `newstrace_export_${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      showToast('Data exported successfully!');
+    }
+
+    function updateAll() {
+      updateStats();
+      updateAuthorsTable();
+      updateTopContributorsChart();
+      updateTopicDistChart();
+      updateOutletChart();
+      updateProductivityChart();
+      updateNetworkGraph();
+    }
+
+    // --- UI FEEDBACK FUNCTIONS ---
+
+    function showLoading() {
+      document.getElementById('loadingOverlay').classList.add('active');
+    }
+
+    function hideLoading() {
+      document.getElementById('loadingOverlay').classList.remove('active');
+    }
+
+    function showToast(message, isError = false) {
+      const toast = document.getElementById('toast');
+
+      toast.className = 'toast';
+      toast.classList.add(isError ? 'error' : 'success');
+
+      toast.innerHTML = `
+      <span style="font-size: 1.5rem;">${isError ? '❌' : '✅'}</span>
+      <span>${message}</span>
+    `;
+
+      setTimeout(() => toast.classList.add('show'), 50);
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 3000);
+    }
+
+    // --- EVENT LISTENERS ---
+
+    document.addEventListener('keydown', (e) => {
+      if (e.ctrlKey || e.metaKey) {
+        if (e.key === 'k') {
+          e.preventDefault();
+          document.getElementById('authorSearch').focus();
+        } else if (e.key === 'e') {
+          e.preventDefault();
+          exportData();
+        } else if (e.key === 'r') {
+          e.preventDefault();
+          resetFilters();
+        }
+      }
+    });
+
+    let searchTimeout;
+    document.getElementById('authorSearch').addEventListener('input', () => {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(applyFilters, 500);
+    });
+
+    document.getElementById('topicFilter').addEventListener('change', applyFilters);
+    document.getElementById('outletFilter').addEventListener('change', applyFilters);
+
+    // Initial load
+    window.addEventListener('load', () => {
+      populateFilters();
+      updateAll();
+      setTimeout(() => showToast('Welcome to NewsTrace! Data loaded from mock source. 🎉'), 1000);
+    });
+
+    setInterval(() => {
+      let updated = false;
+      mockData.authors.forEach(author => {
+        if (Math.random() > 0.8) {
+          author.num_articles += Math.floor(Math.random() * 2);
+          updated = true;
+        }
+      });
+      if (updated && !document.getElementById('topicFilter').value &&
+        !document.getElementById('outletFilter').value &&
+        !document.getElementById('authorSearch').value) {
+        filteredData = JSON.parse(JSON.stringify(mockData));
+        updateAll();
+      }
+    }, 30000); 
+  </script>
+
+</body>
+
+</html>
