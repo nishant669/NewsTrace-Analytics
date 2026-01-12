@@ -1,4 +1,3 @@
-Here is an updated, emoji-rich version of your README.md. This adds visual flair while keeping it professional enough for recruiters.
 
 📰 NewsTrace — Autonomous Journalist Profiling & Media Trend Analysis
 NewsTrace is a full-stack analytics dashboard designed to visualize media trends, profile journalist output, and analyze topic distributions across major news outlets.
