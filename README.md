@@ -1,4 +1,3 @@
-
 📰 NewsTrace — Autonomous Journalist Profiling & Media Trend Analysis
 NewsTrace is a full-stack analytics dashboard designed to visualize media trends, profile journalist output, and analyze topic distributions across major news outlets.
 
@@ -90,29 +89,4 @@ graph.py & outlets.py: 🔗 API routers for network graph and outlet data.
 
 project_first.html: 🖥️ The frontend dashboard interface.
 
-etl_pipeline.py: 🏗️ Standalone script for extracting and cleaning external API data.
-
-Create a .env file in the root directory:
-
-Plaintext
-
-NEWS_API_KEY=your_actual_api_key_here
-Run the script:
-
-PowerShell
-
-python etl_pipeline.py
-This will generate a live_journalists_data.csv file with cleaned and transformed data.
-
-📂 Project Structure
-backend.py: Main entry point for the FastAPI server.
-
-
-journalist.py: Analytics logic using Pandas to filter and serve data.
-
-graph.py & outlets.py: API routers for network graph and outlet data.
-
-
-project_first.html: The frontend dashboard interface.
-
-etl_pipeline.py: Standalone script for extracting and cleaning external API data.
+etl_pipeline.py: 🏗️ Standalone script for extracting and cleaning external API data.data.
