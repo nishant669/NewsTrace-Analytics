@@ -1,46 +1,95 @@
-# NewsTrace — Local development
+NewsTrace — Autonomous Journalist Profiling & Media Trend Analysis
+NewsTrace is a full-stack analytics dashboard designed to visualize media trends, profile journalist output, and analyze topic distributions across major news outlets.
 
-Quick steps to create a virtual environment, install dependencies, and run the FastAPI server on Windows PowerShell.
+It combines a Python FastAPI backend for data processing with a custom HTML/D3.js frontend for interactive visualization.
 
-Requirements
-- Python 3.10+ (you have Python 3.13 — good)
+🚀 Key Features
 
-PowerShell commands (run from the project root where `backend.py` lives):
+Advanced Analytics Engine: Uses Pandas to perform vectorised filtering and data aggregation on journalist datasets.
 
-```powershell
-# 1) Create virtual environment
+Interactive Visualization: Custom-built dashboard using D3.js and Plotly to render:
+
+Network Graphs (Journalist-Topic relationships)
+
+Contribution Distribution Charts
+
+Outlet trend analysis
+
+ETL Pipeline (Proof of Concept): Includes a separate etl_pipeline.py script that connects to the News API to fetch, transform, and load real-time media data.
+
+🛠️ Tech Stack
+Backend: Python 3.10+, FastAPI, Pandas, Uvicorn
+
+Frontend: HTML5, CSS3, D3.js, Plotly.js (No JS framework dependency)
+
+Data Processing: Pandas (DataFrames), Requests (API fetching)
+
+Development: Windows PowerShell, Virtual Environments
+
+📦 Installation & Local Development
+Follow these steps to run the project locally on Windows.
+
+1. Clone the Repository
+Bash
+
+git clone https://github.com/YOUR_USERNAME/NewsTrace-Analytics.git
+cd NewsTrace-Analytics
+2. Set up the Virtual Environment
+Run these commands in PowerShell from the project root:
+
+PowerShell
+
+# Create virtual environment
 python -m venv .venv
 
-# 2) Activate (PowerShell)
+# Activate the environment
 .\.venv\Scripts\Activate.ps1
+3. Install Dependencies
+PowerShell
 
-# 3) Upgrade pip and install dependencies
+# Upgrade pip and install required packages
 python -m pip install --upgrade pip
 pip install -r requirements.txt
+(Note: Ensure requirements.txt includes fastapi, uvicorn[standard], pandas, requests, and python-dotenv)
 
-# 4) Run the server (development mode)
-uvicorn backend:app --reload --host 127.0.0.1 --port 8000
+4. Run the Analytics Server
+Start the backend server using the module flag to ensure environment stability:
 
-# 5) Visit the root to confirm
-# Open http://127.0.0.1:8000/ in your browser (should return a JSON message)
-```
+PowerShell
 
-Notes
-- The frontend `project_first.html` expects the API at `http://127.0.0.1:8000/api`.
-- CORS is wide-open for development in `backend.py`; restrict before production.
-- If you prefer a single-step run without activating the venv, you can run the venv python directly:
+python -m uvicorn backend:app
+Once the server starts (you will see Application startup complete), open the dashboard in your browser:
 
-```powershell
-.\.venv\Scripts\python.exe -m uvicorn backend:app --reload --host 127.0.0.1 --port 8000
-```
+👉 http://127.0.0.1:8000/dashboard
 
-If you want, I can also:
-- add a small test script that queries `/api/journalists` and asserts the response.
-- pin specific dependency versions.
-# running command -->               .\.venv\Scripts\Activate.ps1
-# second running command2 --->      uvicorn backend:app --reload --host 127.0.0.1 --port 8000
-# ---->  http://127.0.0.1:8000/
-# ---->  http://127.0.0.1:8000/docs
-# ---->  http://127.0.0.1:8000/api/journalists
-# -----> http://127.0.0.1:8000/dashboard
-# ------> ctr+c for closing
+📡 ETL Pipeline (Optional)
+The project includes an independent ETL script (etl_pipeline.py) that demonstrates data engineering capabilities by fetching live data from the News API.
+
+To run the pipeline:
+
+Get a free API Key from NewsAPI.org.
+
+Create a .env file in the root directory:
+
+Plaintext
+
+NEWS_API_KEY=your_actual_api_key_here
+Run the script:
+
+PowerShell
+
+python etl_pipeline.py
+This will generate a live_journalists_data.csv file with cleaned and transformed data.
+
+📂 Project Structure
+backend.py: Main entry point for the FastAPI server.
+
+
+journalist.py: Analytics logic using Pandas to filter and serve data.
+
+graph.py & outlets.py: API routers for network graph and outlet data.
+
+
+project_first.html: The frontend dashboard interface.
+
+etl_pipeline.py: Standalone script for extracting and cleaning external API data.
